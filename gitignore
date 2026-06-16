@@ -3,6 +3,7 @@
 # ============================================================
 
 # Keep: CLAUDE.md, .specify/memory/, .specify/scripts/, .specify/templates/, specs/
+# Keep: .specify/feature.json — shared feature pointer, committed with each /speckit.specify
 # These are all committed — they are the SDD artifacts and tooling your team needs.
 
 # Ignore only the Spec Kit backup files
