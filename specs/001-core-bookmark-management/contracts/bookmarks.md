@@ -1,8 +1,8 @@
 # API Contracts: Bookmarks
 
-**Base URL**: `http://localhost:5000/api`
-**Date**: 2026-06-16
-**Branch**: `001-core-bookmark-management`
+- **Base URL**: `http://localhost:5000/api`
+- **Date**: 2026-06-16
+- **Branch**: `001-core-bookmark-management`
 
 All request and response bodies use `application/json`.
 Error responses use `application/problem+json` (RFC 7807 ProblemDetails).

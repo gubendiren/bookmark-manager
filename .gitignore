@@ -1,0 +1,52 @@
+# ============================================================
+# Spec Kit
+# ============================================================
+
+# Keep: CLAUDE.md, .specify/memory/, .specify/scripts/, .specify/templates/, specs/
+# Keep: .specify/feature.json — shared feature pointer, committed with each /speckit.specify
+# These are all committed — they are the SDD artifacts and tooling your team needs.
+
+# Ignore only the Spec Kit backup files
+.specify/memory/constitution-backup.md
+
+# ============================================================
+# .NET
+# ============================================================
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.nupkg
+*.snupkg
+
+# ============================================================
+# React / Node
+# ============================================================
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ============================================================
+# IDE
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo

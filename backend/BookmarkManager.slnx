@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BookmarkManager.Api.Tests/BookmarkManager.Api.Tests.csproj" />
+  <Project Path="BookmarkManager.Api/BookmarkManager.Api.csproj" />
+</Solution>
