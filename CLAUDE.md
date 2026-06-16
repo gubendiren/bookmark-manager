@@ -25,3 +25,8 @@ The specification is the source of truth, not the output.
 - PR required before merging to main
 - CI pipeline must pass before merge
 Adapt the content to you
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
