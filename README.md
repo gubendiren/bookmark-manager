@@ -4,6 +4,8 @@ This guide walks you through the same build described in the article, step by st
 
 By the end you will have gone through every SDD phase: constitution, specify, clarify, plan, tasks, implement, PR, pipeline, acceptance, and iteration.
 
+> **Note:** Spec Kit is an open source project maintained by GitHub at [github/spec-kit](https://github.com/github/spec-kit). The official documentation is at [github.github.com/spec-kit](https://github.github.com/spec-kit/) and is the authoritative source for anything that may have changed since this guide was written.
+
 ---
 
 ## What You Need Before You Start
@@ -13,349 +15,435 @@ By the end you will have gone through every SDD phase: constitution, specify, cl
 - An Anthropic account with access to Claude Code
 
 **Tools installed on your machine**
-- Claude Code (installed via `npm install -g @anthropic-ai/claude-code`)
+- Claude Code (`npm install -g @anthropic-ai/claude-code`)
 - Git
+- Python 3.11 or later and [uv](https://docs.astral.sh/uv/) (for installing the Spec Kit CLI — install commands in Step 3)
 - Node.js 18 or later
 - .NET 8 SDK
 
 **Familiarity assumed**
 - You can run commands in a terminal
-- You are comfortable with the concept of a Git branch and a pull request
+- You are comfortable with Git branches and pull requests
 
-You do not need prior experience with SDD or AI coding agents. That is what this guide is for.
+---
+
+## What the Spec Kit Creates on Disk
+
+Before you start, it helps to understand the folder structure `specify init` produces, so you know what you are looking at and what needs to go into Git.
+
+```
+your-project/
+  CLAUDE.md                          ← Auto-generated. Review and commit it.
+  .specify/
+    memory/
+      constitution.md                ← Your customised governance doc. Commit it.
+    scripts/                         ← Spec Kit tooling. Commit it so teammates can run the workflow.
+    templates/                       ← Spec Kit templates. Commit alongside scripts.
+  specs/
+    001-bookmark-management/         ← Created per feature, on a Git branch of the same name.
+      spec.md                        ← Feature specification. Commit it.
+      plan.md                        ← Implementation plan. Commit it.
+      tasks.md                       ← Task list. Commit it.
+      data-model.md                  ← If generated. Commit it.
+```
+
+**What to commit:** `CLAUDE.md`, everything under `.specify/memory/`, and everything under `specs/`. The `specs/` folder is where all your authored SDD artifacts live and is the most important thing to keep in version control.
+
+**What to watch out for:** If you ever run `specify init --here --force` to upgrade Spec Kit, it will overwrite `.specify/memory/constitution.md` with the default template. Back it up first:
+
+```bash
+cp .specify/memory/constitution.md .specify/memory/constitution-backup.md
+```
 
 ---
 
 ## Step 1: Install Claude Code
 
-Claude Code is Anthropic's command-line coding agent. It runs in your terminal, reads your repository, and operates on your files directly. It is the AI agent that will read your specifications and generate code from them.
-
-1. Install Claude Code globally:
-
-```
+```bash
 npm install -g @anthropic-ai/claude-code
-```
-
-2. Authenticate with your Anthropic account:
-
-```
 claude login
 ```
 
-3. Confirm it is working by navigating to any directory and running:
-
-```
-claude
-```
-
-You should see the Claude Code interactive prompt. Type `exit` to leave.
+Confirm it is working by navigating to any directory and running `claude`. You should see the interactive prompt. Type `exit` to leave.
 
 ---
 
-## Step 2: Install the GitHub Spec Kit
+## Step 2: Create Your Repository
 
-The GitHub Spec Kit is the methodology layer. It provides the structured slash commands and phase templates that drive the SDD workflow inside Claude Code.
+1. Create a new GitHub repository called `bookmark-manager`. Initialise it with a README.
+2. Clone it and enter the directory:
 
-1. Go to the GitHub Spec Kit repository. Search for `Kirchlive/SpecKit` on GitHub to find it.
-2. Read the README before proceeding. The Spec Kit is under active development and setup steps may have been updated since this guide was written.
-3. Follow the installation instructions in the README to add the Spec Kit to your Claude Code environment.
-4. Confirm the Spec Kit commands are available by opening Claude Code in your project directory and typing `/spec-help` or the equivalent command listed in the README.
-
-**What you are setting up:** The Spec Kit gives Claude Code a structured vocabulary for SDD phases. Without it, you would prompt Claude Code freeform for each phase. With it, each phase has a dedicated command that knows what to produce and in what format.
-
----
-
-## Step 3: Create Your Repository and Project Structure
-
-1. Create a new GitHub repository called `bookmark-manager` (or any name you prefer). Initialise it with a README.
-2. Clone it to your local machine:
-
-```
+```bash
 git clone https://github.com/your-username/bookmark-manager.git
 cd bookmark-manager
 ```
 
-3. Create the following folder structure:
-
-```
-bookmark-manager/
-  .spec/
-  src/
-  tests/
-  CLAUDE.md
-```
-
-The `.spec/` folder is where all your SDD artifacts will live: the constitution, the feature specifications, the plan, and the task list. Keeping them together and versioned in the repository means they travel with the code and are never separated from what they govern.
-
 ---
 
-## Step 4: Write the `CLAUDE.md` File
+## Step 3: Install uv, the Spec Kit, and Initialise for Claude Code
 
-This is the most important setup step. The `CLAUDE.md` file at the root of your repository tells Claude Code how to behave in this project. Without it, every Claude Code session starts without context: it does not know it is operating inside an SDD workflow, which phases to follow, or what conventions the project uses. With it, the workflow becomes automatic from the first prompt.
+### Install uv
 
-Create `CLAUDE.md` at the repository root with content along these lines:
+`uv` is a Python package manager used to install the Spec Kit CLI. If you do not have it:
 
-```markdown
-# Project: Personal Bookmark Manager
+```bash
+# macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-## Development Approach
-This project follows Spec-Driven Development using the GitHub Spec Kit.
-
-## Phase Sequence
-constitution → specify → clarify → plan → tasks → implement → PR → pipeline → acceptance
-
-All specification artifacts live in the `.spec/` folder and are versioned alongside the code.
-
-## The Core Discipline
-When implementation diverges from the specification, correct the specification first.
-Then correct or regenerate the code to match. Never fix the code without updating the spec.
-The specification is the source of truth, not the output.
-
-## Technology Stack
-- Backend: .NET 8 Web API
-- Frontend: React
-- Data: Entity Framework Core In-Memory
-- Testing: xUnit (backend), Jest (frontend)
-
-## Conventions
-- One feature branch per feature
-- One commit per SDD phase
-- PR required before merging to main
-- CI pipeline must pass before merge
+# Windows
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-Adapt the content to your actual project. The more specific your instructions, the less you will need to guide Claude Code manually during the build.
+Restart your terminal after installing, then confirm it works:
 
-Commit this file before starting any SDD phases:
+```bash
+uv --version
+```
+
+### Install the Spec Kit CLI
+
+Replace `vX.Y.Z` with the latest release tag from the [Spec Kit releases page](https://github.com/github/spec-kit/releases):
+
+```bash
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@vX.Y.Z
+```
+
+Confirm the install:
+
+```bash
+specify version
+```
+
+### Initialise the project for Claude Code
+
+```bash
+specify init . --integration claude
+```
+
+This creates the full `.specify/` folder structure, installs the Spec Kit slash commands into Claude Code's skill directory (`.claude/skills/`), and generates `CLAUDE.md` at the repository root.
+
+### Verify the installation
+
+Open Claude Code in the project directory:
+
+```bash
+claude
+```
+
+Type `/speckit` and confirm you see the following core commands listed:
 
 ```
-git add CLAUDE.md
-git commit -m "Add CLAUDE.md with SDD workflow instructions"
+/speckit.constitution
+/speckit.specify
+/speckit.clarify
+/speckit.checklist
+/speckit.plan
+/speckit.analyze
+/speckit.tasks
+/speckit.implement
+```
+
+If the commands do not appear, check that the Claude integration installed correctly by reviewing the `.claude/skills/` directory. Type `exit` to leave Claude Code for now.
+
+### Review and customise `CLAUDE.md`
+
+`specify init` generates `CLAUDE.md` at the repository root. This file tells Claude Code about the project and its SDD workflow. Open it now and add any project-specific conventions — your branching strategy, commit message format, or technology constraints — that are not already there.
+
+When a new team member joins, `CLAUDE.md` is the first file they should read. It is the operating manual for how the team works, not documentation about the application.
+
+### Commit everything
+
+```bash
+git add .
+git commit -m "SDD: Initialise Spec Kit with Claude Code integration"
 git push
 ```
 
 ---
 
-## Step 5: Phase 1 — Constitution
+## Step 4: Phase 1 — Constitution
 
-Open Claude Code in your project directory:
+The constitution is the governing document for the entire project. It defines non-negotiable architectural principles that every downstream phase — plan, tasks, and implementation — must honour. It lives at `.specify/memory/constitution.md` and is automatically referenced by every Spec Kit command.
 
-```
+Open Claude Code:
+
+```bash
 claude
 ```
 
-Use the Spec Kit constitution command (refer to the Spec Kit README for the exact command). When prompted, provide:
-
-- **Application purpose:** A personal bookmark manager. Users save URLs with a title, tags, notes, and a read or unread status. They can filter bookmarks and view a summary dashboard.
-- **Target user:** A single user. No authentication or multi-user requirements for this build.
-- **Technology stack:** .NET 8 Web API backend, React frontend, Entity Framework Core In-Memory database.
-- **Architectural preferences:** Repository pattern for data access. Clean separation between API controllers and business logic. RESTful API design.
-
-Review the constitution Claude Code produces carefully. You are looking for:
-- Decisions that do not reflect your intent
-- Implicit assumptions you want to make explicit
-- Anything missing that should govern the system
-
-Correct the constitution until it accurately reflects your intentions. Then save it as `.spec/constitution.md` and commit:
+Run:
 
 ```
-git add .spec/constitution.md
+/speckit.constitution This project is a Personal Bookmark Manager. Users save URLs with a title, tags, notes, and a read or unread status. They can filter bookmarks and view a summary dashboard. Single user, no authentication required. Backend: .NET 8 Web API. Frontend: React. Data: Entity Framework Core In-Memory. Repository pattern for data access. Clean separation between controllers and business logic. RESTful API design.
+```
+
+Claude Code will generate the constitution and write it to `.specify/memory/constitution.md`.
+
+Review the output carefully:
+- Does it reflect the architectural decisions you actually want?
+- Has it surfaced any implicit preferences you had not stated explicitly?
+- Is anything missing that should govern every future feature?
+
+Edit `.specify/memory/constitution.md` directly until it accurately reflects your intentions. Then commit:
+
+```bash
+git add .specify/memory/constitution.md
 git commit -m "SDD: Constitution"
 git push
 ```
 
-**What you are producing:** A governing document that every subsequent phase and every code generation will be anchored to. This is the single most important artifact in the build.
-
 ---
 
-## Step 6: Phase 2 — Specify Features
+## Step 5: Phase 2 — Specify the First Feature
 
-Specify features one at a time. Use the Spec Kit specify command for each one.
+Each feature gets its own Git branch and its own folder under `specs/`. The Spec Kit creates both automatically when you run `/speckit.specify`.
 
-**Feature 1: Bookmark Management**
-Core CRUD operations. A user can create a bookmark with a URL, title, tags, notes, and read status. A user can update any field. A user can delete a bookmark. The system must prevent saving a duplicate URL and must return a clear error when a duplicate is attempted.
-
-**Feature 2: Tagging**
-Tags are short text labels attached to a bookmark. A bookmark can have zero or more tags. Tags must be trimmed of leading and trailing whitespace before saving. Tags are case-insensitive for filtering purposes.
-
-**Feature 3: Filtering and Search**
-A user can filter bookmarks by tag, by read status, or by a text search across title and notes. Filters can be combined. The system must return an empty list, not an error, when no bookmarks match the filter criteria.
-
-**Feature 4: Summary Dashboard**
-A dashboard view showing total bookmarks, total unread bookmarks, and a breakdown of bookmarks by tag. The dashboard must reflect current data without requiring a page reload.
-
-For each feature, review the specification Claude Code produces. Check that it uses precise behavioural language: must, should, must not, out of scope. Correct anything vague or missing. Save each specification to `.spec/` and commit after each one:
+Start with Bookmark Management. In Claude Code, run:
 
 ```
-git add .spec/
+/speckit.specify Build the core bookmark management feature. A user can create a bookmark with a URL, title, tags, notes, and a read or unread status. A user can update any of these fields. A user can delete a bookmark. The system must prevent saving a duplicate URL and must return a clear error when a duplicate is attempted.
+```
+
+Spec Kit creates a new branch (`001-bookmark-management`) and writes the specification to `specs/001-bookmark-management/spec.md`.
+
+Review the specification. Good behavioural specs use precise language: must, should, must not, out of scope. A spec that says "the user can manage bookmarks" is not a specification. A spec that says "the system must prevent saving a URL that has already been saved and return a clear duplicate error" is. Correct anything vague.
+
+Commit both the spec artifacts and `.specify/feature.json`:
+
+```bash
+git add specs/ .specify/feature.json
+git commit -m "SDD: Specify bookmark management"
+git push
+```
+
+> **Why commit `feature.json`?** Spec Kit writes `.specify/feature.json` when `/speckit.specify` runs. It contains a single pointer — the active feature directory — and looks like this:
+> ```json
+> {
+>   "feature_directory": "specs/001-bookmark-management"
+> }
+> ```
+> Committing it means any teammate who pulls your branch immediately has the correct feature context. Without it, Spec Kit does not know which `specs/` folder to read and subsequent phase commands will fail or prompt unexpectedly. `feature.json` only changes when a new feature is specified, so subsequent phase commits (clarify, plan, tasks) only need `git add specs/`.
+
+### Specifying Features 2, 3, and 4
+
+Each feature follows the same pattern: return to `main`, then run `/speckit.specify` and Spec Kit creates the next numbered branch and folder automatically.
+
+```bash
+# Return to main before each new feature
+git checkout main
+git pull
+```
+
+Then open Claude Code and run `/speckit.specify` with the feature description. Repeat the review and commit after each one, including `.specify/feature.json` each time:
+
+```bash
+git add specs/ .specify/feature.json
 git commit -m "SDD: Specify [feature name]"
 git push
 ```
 
+**Feature 2 — Tagging:** Tags are short text labels. A bookmark can have zero or more tags. Tags must be trimmed of whitespace before saving. Tags are case-insensitive for filtering.
+
+**Feature 3 — Filtering and Search:** A user can filter by tag, read status, or text search across title and notes. Filters can be combined. No results returns an empty list, not an error.
+
+**Feature 4 — Summary Dashboard:** Shows total bookmarks, total unread, and a breakdown by tag. Reflects current data without a page reload.
+
+> **Note:** Spec Kit detects the active feature from your current Git branch. Always confirm you are on the correct branch before running any phase command.
+
 ---
 
-## Step 7: Phase 3 — Clarify
+## Step 6: Phase 3 — Clarify
 
-The clarify phase is where Claude Code reads your specifications and surfaces the ambiguities you did not notice when writing them.
+Run clarify after specifying each feature, before moving to plan. This is where Claude Code reads your spec and asks about the cases you did not address.
 
-Use the Spec Kit clarify command. Point it at your `.spec/` folder. Review every question it raises. For each one, decide: is this in scope, out of scope, or something the spec should address explicitly?
+Switch to the feature branch you are working on, open Claude Code, and run:
 
-Typical clarify questions for this build:
-- What happens if a tag is only whitespace after trimming?
-- Should the duplicate URL check be case-sensitive?
+```
+/speckit.clarify
+```
+
+Or focus it on a specific concern:
+
+```
+/speckit.clarify Focus on edge cases in tag handling and duplicate URL detection.
+```
+
+For the Bookmark Manager, expect questions like:
+- What happens if a tag is only whitespace after trimming — reject it or ignore it?
+- Is the duplicate URL check case-sensitive?
 - What should the dashboard show when there are no bookmarks yet?
-- Is the text search a substring match or an exact match?
+- Is text search a substring match or exact match?
 
-Answer each question by updating the relevant specification. Do not answer in conversation and leave the spec unchanged. The spec is the record, not the chat history.
+For each question, update the specification. Do not answer in conversation and leave `spec.md` unchanged. The spec is the record.
 
-Commit when done:
+Commit after clarify:
 
-```
-git add .spec/
-git commit -m "SDD: Clarify"
+```bash
+git add specs/
+git commit -m "SDD: Clarify bookmark management"
 git push
 ```
 
 ---
 
-## Step 8: Phase 4 — Plan
+## Step 7: Phase 4 — Checklist (Optional but Recommended)
 
-Use the Spec Kit plan command. Claude Code will generate an implementation plan from the constitution and the specifications.
+The checklist command validates your specification quality before you move to planning. For production features, treat it as a required gate.
 
-Review the plan for:
-- Architectural decisions that conflict with your constitution
+```
+/speckit.checklist
+```
+
+Review any items flagged as incomplete or unclear. Fix them in `spec.md` before continuing.
+
+---
+
+## Step 8: Phase 5 — Plan
+
+```
+/speckit.plan The application uses .NET 8 Web API for the backend and React for the frontend. Entity Framework Core In-Memory for data persistence. REST API with clean controller and service separation following the Repository pattern.
+```
+
+Spec Kit writes the plan to the `specs/` folder for the currently active branch — for Feature 1 this is `specs/001-bookmark-management/plan.md`. For subsequent features, the path will reflect their branch name.
+
+Review the plan against your constitution. Check for:
+- Architectural decisions that conflict with the constitution
 - Gaps the spec implies but the plan does not address
-- Anything that does not fit your conventions
 
-Correct where needed. Save as `.spec/plan.md` and commit:
+You are doing review work here, not authoring. Correct where needed, then commit:
 
-```
-git add .spec/plan.md
-git commit -m "SDD: Plan"
-git push
-```
-
-You are doing review work here, not authoring work. Your job is to apply judgement to a solid starting point, not to produce the plan from scratch.
-
----
-
-## Step 9: Phase 5 — Tasks
-
-Use the Spec Kit tasks command. Claude Code will decompose the plan into dependency-ordered implementation tasks.
-
-Review the task list. Tasks should be granular enough that each one produces a small, reviewable unit of code. If a task feels too large, ask Claude Code to decompose it further.
-
-Save the task list as `.spec/tasks.md` and commit:
-
-```
-git add .spec/tasks.md
-git commit -m "SDD: Tasks"
+```bash
+git add specs/
+git commit -m "SDD: Plan bookmark management"
 git push
 ```
 
 ---
 
-## Step 10: Phase 6 — Implement Task by Task
+## Step 9: Phase 6 — Analyze
 
-Create a feature branch before writing any code:
-
-```
-git checkout -b feature/bookmark-manager
-```
-
-Implement tasks one at a time. For each task:
-
-1. Tell Claude Code which task you are working on and point it at the relevant specification:
+Before generating tasks, run the cross-artifact consistency check:
 
 ```
-Implement task: [task name]. Reference .spec/spec.md and .spec/plan.md.
+/speckit.analyze
 ```
 
-2. Review the generated code. Check it matches what the specification says. Do not accept code that diverges from the spec, even if it looks reasonable on its own.
+This checks for contradictions between your constitution, specification, and plan before implementation starts. Any conflict flagged here is significantly cheaper to fix than after code has been generated. Address any issues raised, then commit:
 
-3. If the generated code diverges from the spec, decide whether the spec is wrong or the code is wrong:
-   - If the spec is wrong, update the spec first, commit it, then ask Claude Code to regenerate.
-   - If the code is wrong, tell Claude Code to correct it with explicit reference to the spec.
+```bash
+git add specs/
+git commit -m "SDD: Analyze bookmark management"
+git push
+```
 
-4. Run the tests after each task before moving to the next.
+---
 
-**The discipline to hold:** Fix the specification before fixing the code. Every time. This is the habit that makes SDD compound over time. A spec that silently diverges from the implementation is not a spec. It is a historical document.
-
-Commit after each task:
+## Step 10: Phase 7 — Tasks
 
 ```
+/speckit.tasks
+```
+
+Spec Kit decomposes the plan into a dependency-ordered task list and writes it to `tasks.md` in the active feature's `specs/` folder.
+
+Review the task list. Tasks should be granular: each one should produce a small, reviewable unit of code. If any task feels too large, ask Claude Code to decompose it further.
+
+Commit:
+
+```bash
+git add specs/
+git commit -m "SDD: Tasks bookmark management"
+git push
+```
+
+---
+
+## Step 11: Phase 8 — Implement
+
+```
+/speckit.implement
+```
+
+For complex features, implement in stages rather than all at once — the Spec Kit documentation recommends this explicitly to avoid overwhelming the agent's context window. Start with core functionality, validate it works, then continue.
+
+During implementation, apply this discipline without exception: when the generated code diverges from the specification, correct the specification first, then correct or regenerate the code. Never fix the code without updating the spec. If you only fix the code, the spec becomes unreliable and every future generation may reproduce the original error.
+
+Run the tests after each stage before continuing.
+
+When implementation is complete, commit:
+
+```bash
 git add .
-git commit -m "Implement: [task name]"
-```
-
----
-
-## Step 11: Phase 7 — PR, Pipeline, and Acceptance
-
-When all tasks for the feature are complete, push your branch and open a pull request:
-
-```
-git push origin feature/bookmark-manager
-```
-
-Open a pull request on GitHub. The CI pipeline will run automatically. If you have set up a GitHub Actions workflow with a spec compliance check, it will validate the implementation against the specification. If you have not set one up yet, standard unit and integration tests are sufficient for this build.
-
-Review the PR yourself against the specification, not just against the previous code. Merge when the pipeline passes and the review is complete:
-
-```
-git checkout main
-git merge feature/bookmark-manager
+git commit -m "Implement: bookmark management"
 git push
 ```
 
 ---
 
-## Step 12: Phase 8 — Iterate with a New Feature
+## Step 12: PR, Pipeline, and Acceptance
 
-Add the Favourites feature to prove the loop repeats cleanly.
+Push your feature branch and open a pull request against `main`:
 
-**Favourites feature:** A user can mark any bookmark as a favourite. Favourites appear in a dedicated section at the top of the bookmark list. The summary dashboard shows a count of favourite bookmarks. Removing a favourite flag does not delete the bookmark.
-
-Before specifying the new feature, update your existing specification documents to ensure the Favourites feature is consistent with what is already there. If the summary dashboard spec says it shows total bookmarks and total unread bookmarks, it now also needs to mention favourites. Spec maintenance is real work. Budget it.
-
-Then run the full loop: specify, clarify, plan, tasks, implement, PR, pipeline, acceptance.
-
-Create a new branch for this iteration:
-
+```bash
+git push origin 001-bookmark-management
 ```
-git checkout -b feature/favourites
+
+Open the pull request on GitHub.
+
+**CI pipeline:** If you have a GitHub Actions workflow configured, it will run your tests automatically on the PR. If you do not have one set up yet, this step becomes a manual test run — run `dotnet test` for the backend and `npm test` for the frontend locally before merging. Setting up a full CI pipeline is outside the scope of this guide; the [GitHub Actions quickstart for .NET](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-net) is a good starting point when you are ready.
+
+Review the PR against the specification, not just against the diff. Merge when tests pass and the review is complete.
+
+After merging, return to `main`:
+
+```bash
+git checkout main
+git pull
 ```
+
+---
+
+## Step 13: Iterate — Add the Favourites Feature
+
+The Favourites feature proves the loop repeats cleanly. It is not a new process — it is Steps 5 through 12 again, for a new feature.
+
+**Favourites:** A user can mark any bookmark as a favourite. Favourites appear in a dedicated section at the top of the bookmark list. The summary dashboard shows a count of favourite bookmarks. Removing a favourite flag does not delete the bookmark.
+
+Before specifying, update the existing specs where needed — the dashboard spec now needs to mention favourites. Spec maintenance is real work. Budget it.
+
+Then work through the phases in order:
+
+1. **Step 5** — `/speckit.specify` (Spec Kit creates `specs/002-favourites/` on a new branch)
+2. **Step 6** — `/speckit.clarify`
+3. **Step 7** — `/speckit.checklist`
+4. **Step 8** — `/speckit.plan`
+5. **Step 9** — `/speckit.analyze`
+6. **Step 10** — `/speckit.tasks`
+7. **Step 11** — `/speckit.implement`
+8. **Step 12** — PR, tests, merge
+
+Commit after each phase, exactly as you did for the first feature.
 
 ---
 
 ## What to Check When You Are Done
 
-By the end of this build you should have:
+By the end you should have:
 
-- `.spec/constitution.md` accurately describing the system's architecture and constraints
-- `.spec/spec.md` with precise behavioural specifications for five features
-- `.spec/plan.md` reflecting the implementation approach
-- `.spec/tasks.md` with the dependency-ordered task list
-- A Git history of approximately twelve commits, one per SDD phase across both iterations
+- `CLAUDE.md` at the repository root, reviewed and customised
+- `.specify/memory/constitution.md` accurately describing the system's architecture and constraints
+- `specs/001-bookmark-management/` and `specs/002-favourites/` each containing `spec.md`, `plan.md`, and `tasks.md`
+- A `.gitignore` excluding build artefacts but keeping all SDD artifacts committed
+- A Git history showing one commit per SDD phase across both features
 - A working Personal Bookmark Manager application
-- A CI pipeline that runs on every PR
+- All spec artifacts versioned alongside the code
 
-If any of these are missing or incomplete, trace back to the phase where the gap occurred. The most common gaps are a constitution that was too thin, specifications that used vague language, and a clarify phase that was skipped.
-
----
-
-## A Note on the `CLAUDE.md` File and New Team Members
-
-When a new team member joins the project, the first thing they should read is `CLAUDE.md`. It explains the workflow, the phase sequence, and the core discipline. Without it, they will not understand why the `.spec/` folder exists, why corrections go into the spec before the code, or what the commit history is intended to communicate.
-
-The `CLAUDE.md` file is not documentation about the application. It is documentation about how the team works. Treat it as a living document and update it when the workflow evolves.
+If anything is missing, trace back to the phase where the gap occurred. The most common gaps are a constitution that was too thin, specifications that used vague language, and a clarify phase that was skipped or rushed.
 
 ---
 
 ## Where to Go Next
 
-This build is spec-first, the first of three SDD maturity levels. The next level, spec-anchored, means adding structured CI validation that mechanically checks implementation compliance against the specification. That is a meaningful engineering investment beyond what this guide covers.
+This build is spec-first — the first of three SDD maturity levels. The next level, spec-anchored, adds structured CI validation that mechanically checks implementation compliance against the specification.
 
-For deeper reading on SDD methodology and tooling options, start with Birgitta Böckeler's tool comparison on Martin Fowler's site and Hari Krishnan's enterprise adoption analysis on InfoQ.
-
-If you run into gaps between this guide and the current state of the Spec Kit, the Spec Kit repository is the authoritative source. This guide reflects the state of the tooling at the time of writing.
+For deeper reading on the methodology, start with Birgitta Böckeler's tool comparison on Martin Fowler's site and Hari Krishnan's enterprise adoption analysis on InfoQ. For the Spec Kit itself, the official documentation is at [github.github.com/spec-kit](https://github.github.com/spec-kit/) and is the authoritative source for anything that may have changed since this guide was written.
