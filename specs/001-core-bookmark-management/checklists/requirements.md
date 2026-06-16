@@ -31,4 +31,8 @@
 
 ## Notes
 
-All items pass. Specification is ready for `/speckit-clarify` or `/speckit-plan`.
+All items pass. Clarification session 2026-06-16 resolved 5 questions:
+URL format validation (FR-010), partial update semantics (FR-005, SC-003),
+default unread status (FR-001), tag deduplication (Assumptions), and
+duplicate URL error detail (FR-004, FR-006, SC-005).
+Specification is ready for `/speckit-plan`.
