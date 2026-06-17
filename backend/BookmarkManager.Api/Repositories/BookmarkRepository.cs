@@ -1,4 +1,5 @@
 using BookmarkManager.Api.Data;
+using BookmarkManager.Api.DTOs;
 using BookmarkManager.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,4 +44,27 @@ public class BookmarkRepository(BookmarkDbContext db) : IBookmarkRepository
     public async Task<Bookmark?> GetByNormalizedUrlAsync(string normalizedUrl) =>
         await db.Bookmarks.FirstOrDefaultAsync(b =>
             b.Url.ToLower().Trim() == normalizedUrl);
+
+    public async Task<BookmarkSummaryResponse> GetSummaryAsync()
+    {
+        var all = await db.Bookmarks.ToListAsync();
+
+        var total = all.Count;
+        var unread = all.Count(b => !b.IsRead);
+        var untaggedCount = all.Count(b => b.Tags.Count == 0);
+        var tags = all
+            .SelectMany(b => b.Tags)
+            .GroupBy(t => t)
+            .Select(g => new TagCount { Tag = g.Key, Count = g.Count() })
+            .OrderBy(tc => tc.Tag)
+            .ToList();
+
+        return new BookmarkSummaryResponse
+        {
+            Total = total,
+            Unread = unread,
+            Tags = tags,
+            UntaggedCount = untaggedCount,
+        };
+    }
 }
