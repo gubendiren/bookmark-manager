@@ -13,4 +13,5 @@ public interface IBookmarkRepository
     Task<bool> ExistsByNormalizedUrlAsync(string normalizedUrl);
     Task<Bookmark?> GetByNormalizedUrlAsync(string normalizedUrl);
     Task<IEnumerable<Bookmark>> GetFilteredAsync(string? tag, bool? isRead, string? keyword);
+    Task<BookmarkSummaryResponse> GetSummaryAsync();
 }

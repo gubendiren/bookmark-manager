@@ -63,4 +63,24 @@ public class BookmarkRepository(BookmarkDbContext db) : IBookmarkRepository
 
         return result.ToList();
     }
+
+    public async Task<BookmarkSummaryResponse> GetSummaryAsync()
+    {
+        var bookmarks = await db.Bookmarks.ToListAsync();
+        var tags = bookmarks
+            .SelectMany(b => b.Tags)
+            .GroupBy(t => t.ToLowerInvariant())
+            .Select(g => new TagCount { Tag = g.Key, Count = g.Count() })
+            .OrderByDescending(t => t.Count)
+            .ThenBy(t => t.Tag)
+            .ToList();
+
+        return new BookmarkSummaryResponse
+        {
+            Total = bookmarks.Count,
+            Unread = bookmarks.Count(b => !b.IsRead),
+            Tags = tags,
+            UntaggedCount = bookmarks.Count(b => b.Tags.Count == 0)
+        };
+    }
 }

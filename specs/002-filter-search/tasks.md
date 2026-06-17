@@ -187,7 +187,7 @@
 ### Final Validation
 
 - [X] T034 Run `npm test` from `frontend/` — confirm all new and existing tests pass
-- [ ] T035 Run quickstart.md smoke tests (curl commands in `specs/002-filter-search/quickstart.md`) against running backend — confirm all 7 scenarios produce expected results
+- [X] T035 Run quickstart.md smoke tests (curl commands in `specs/002-filter-search/quickstart.md`) against running backend — confirm all 7 scenarios produce expected results
 
 ---
 
