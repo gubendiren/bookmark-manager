@@ -36,9 +36,23 @@ public partial class BookmarkService(IBookmarkRepository repository) : IBookmark
         return ToResponse(created);
     }
 
-    public async Task<IEnumerable<BookmarkResponse>> GetAllAsync()
+    public async Task<IEnumerable<BookmarkResponse>> GetAllAsync(BookmarkFilterRequest filter)
     {
-        var bookmarks = await repository.GetAllAsync();
+        var tag = string.IsNullOrWhiteSpace(filter.Tag) ? null : filter.Tag.Trim().ToLowerInvariant();
+
+        bool? isRead = filter.Status?.ToLowerInvariant() switch
+        {
+            null or "all" => null,
+            "read" => true,
+            "unread" => false,
+            _ => throw new ArgumentException(
+                $"Invalid status value '{filter.Status}'. Accepted values: read, unread, all.",
+                nameof(filter.Status)),
+        };
+
+        var keyword = string.IsNullOrWhiteSpace(filter.Keyword) ? null : filter.Keyword.Trim().ToLowerInvariant();
+
+        var bookmarks = await repository.GetFilteredAsync(tag, isRead, keyword);
         return bookmarks.Select(ToResponse);
     }
 

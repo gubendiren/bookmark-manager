@@ -21,8 +21,15 @@ export async function createBookmark(data) {
   return handleResponse(res)
 }
 
-export async function getAll() {
-  const res = await fetch('/api/bookmarks')
+export async function getAll(filter) {
+  const params = new URLSearchParams()
+  if (filter) {
+    if (filter.tag) params.set('tag', filter.tag)
+    if (filter.status && filter.status !== 'all') params.set('status', filter.status)
+    if (filter.keyword) params.set('q', filter.keyword)
+  }
+  const query = params.toString()
+  const res = await fetch(query ? `/api/bookmarks?${query}` : '/api/bookmarks')
   return handleResponse(res)
 }
 

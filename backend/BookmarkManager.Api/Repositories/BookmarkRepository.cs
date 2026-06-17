@@ -45,26 +45,22 @@ public class BookmarkRepository(BookmarkDbContext db) : IBookmarkRepository
         await db.Bookmarks.FirstOrDefaultAsync(b =>
             b.Url.ToLower().Trim() == normalizedUrl);
 
-    public async Task<BookmarkSummaryResponse> GetSummaryAsync()
+    public async Task<IEnumerable<Bookmark>> GetFilteredAsync(string? tag, bool? isRead, string? keyword)
     {
-        var all = await db.Bookmarks.ToListAsync();
+        var bookmarks = await db.Bookmarks.OrderBy(b => b.CreatedAt).ToListAsync();
+        IEnumerable<Bookmark> result = bookmarks;
 
-        var total = all.Count;
-        var unread = all.Count(b => !b.IsRead);
-        var untaggedCount = all.Count(b => b.Tags.Count == 0);
-        var tags = all
-            .SelectMany(b => b.Tags)
-            .GroupBy(t => t)
-            .Select(g => new TagCount { Tag = g.Key, Count = g.Count() })
-            .OrderBy(tc => tc.Tag)
-            .ToList();
+        if (tag is not null)
+            result = result.Where(b => b.Tags.Any(t => t.ToLowerInvariant() == tag));
 
-        return new BookmarkSummaryResponse
-        {
-            Total = total,
-            Unread = unread,
-            Tags = tags,
-            UntaggedCount = untaggedCount,
-        };
+        if (isRead is not null)
+            result = result.Where(b => b.IsRead == isRead);
+
+        if (keyword is not null)
+            result = result.Where(b =>
+                b.Title.ToLowerInvariant().Contains(keyword) ||
+                (b.Notes != null && b.Notes.ToLowerInvariant().Contains(keyword)));
+
+        return result.ToList();
     }
 }

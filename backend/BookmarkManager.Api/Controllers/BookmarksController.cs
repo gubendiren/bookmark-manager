@@ -43,10 +43,18 @@ public class BookmarksController(IBookmarkService service) : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] BookmarkFilterRequest filter)
     {
-        var result = await service.GetAllAsync();
-        return Ok(result);
+        try
+        {
+            var result = await service.GetAllAsync(filter);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationProblem(new ValidationProblemDetails(
+                new Dictionary<string, string[]> { [ex.ParamName ?? "filter"] = [ex.Message] }));
+        }
     }
 
     [HttpGet("{id:guid}")]

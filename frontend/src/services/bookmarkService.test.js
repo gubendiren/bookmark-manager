@@ -67,6 +67,66 @@ describe('bookmarkService.getAll', () => {
     expect(fetch).toHaveBeenCalledWith('/api/bookmarks')
     expect(result).toHaveLength(1)
   })
+
+  it('with tag filter builds correct query string', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => [mockBookmark],
+    }))
+
+    await bookmarkService.getAll({ tag: 'react', status: 'all', keyword: '' })
+
+    expect(fetch).toHaveBeenCalledWith('/api/bookmarks?tag=react')
+  })
+
+  it('with status filter builds correct query string', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => [],
+    }))
+
+    await bookmarkService.getAll({ tag: '', status: 'unread', keyword: '' })
+
+    expect(fetch).toHaveBeenCalledWith('/api/bookmarks?status=unread')
+  })
+
+  it('with keyword filter appends q param', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => [],
+    }))
+
+    await bookmarkService.getAll({ tag: '', status: 'all', keyword: 'hooks' })
+
+    expect(fetch).toHaveBeenCalledWith('/api/bookmarks?q=hooks')
+  })
+
+  it('with all three filters builds full query string', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => [],
+    }))
+
+    await bookmarkService.getAll({ tag: 'react', status: 'unread', keyword: 'hooks' })
+
+    expect(fetch).toHaveBeenCalledWith('/api/bookmarks?tag=react&status=unread&q=hooks')
+  })
+
+  it('with status=all omits status param', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => [],
+    }))
+
+    await bookmarkService.getAll({ tag: '', status: 'all', keyword: '' })
+
+    expect(fetch).toHaveBeenCalledWith('/api/bookmarks')
+  })
+
+  it('with empty tag omits tag param', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => [],
+    }))
+
+    await bookmarkService.getAll({ tag: '', status: 'all', keyword: '' })
+
+    expect(fetch).toHaveBeenCalledWith('/api/bookmarks')
+  })
 })
 
 // ── updateBookmark ──────────────────────────────────────────────────────────
