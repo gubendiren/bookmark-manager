@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import BookmarkList from './BookmarkList'
 import * as bookmarkService from '../../services/bookmarkService'
@@ -15,6 +15,10 @@ const mockBookmarks = [
 ]
 
 describe('BookmarkList', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('renders a BookmarkCard for each bookmark on load', async () => {
     vi.spyOn(bookmarkService, 'getAll').mockResolvedValue(mockBookmarks)
 
@@ -34,5 +38,25 @@ describe('BookmarkList', () => {
     await waitFor(() =>
       expect(screen.getByText(/no bookmarks yet/i)).toBeInTheDocument()
     )
+  })
+
+  it('passes filter to bookmarkService.getAll', async () => {
+    const filter = { tag: 'react', status: 'unread', keyword: 'hooks' }
+    const spy = vi.spyOn(bookmarkService, 'getAll').mockResolvedValue([])
+
+    render(<BookmarkList filter={filter} />)
+
+    await waitFor(() => expect(spy).toHaveBeenCalledWith(filter))
+  })
+
+  it('re-fetches with filter when filter prop changes', async () => {
+    const spy = vi.spyOn(bookmarkService, 'getAll').mockResolvedValue([])
+    const { rerender } = render(<BookmarkList filter={{ tag: '', status: 'all', keyword: '' }} />)
+
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1))
+
+    rerender(<BookmarkList filter={{ tag: 'react', status: 'all', keyword: '' }} />)
+
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(2))
   })
 })

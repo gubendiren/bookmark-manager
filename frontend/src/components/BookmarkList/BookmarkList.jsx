@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 import { getAll } from '../../services/bookmarkService'
 import BookmarkCard from '../BookmarkCard/BookmarkCard'
 
-export default function BookmarkList({ refresh }) {
+export default function BookmarkList({ refresh, filter }) {
   const [bookmarks, setBookmarks] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
-    getAll()
+    getAll(filter)
       .then(setBookmarks)
       .finally(() => setLoading(false))
-  }, [refresh])
+  }, [refresh, filter])
 
   function handleUpdated(updated) {
     setBookmarks(bs => bs.map(b => b.id === updated.id ? updated : b))

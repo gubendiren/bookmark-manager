@@ -89,7 +89,7 @@ public class BookmarksControllerTests : IClassFixture<WebApplicationFactory<Prog
     public async Task GetAll_Returns200WithArray()
     {
         var service = Substitute.For<IBookmarkService>();
-        service.GetAllAsync().Returns([
+        service.GetAllAsync(Arg.Any<BookmarkFilterRequest>()).Returns([
             new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", Tags = [], CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
         ]);
 
@@ -182,6 +182,140 @@ public class BookmarksControllerTests : IClassFixture<WebApplicationFactory<Prog
             new { url = "https://other.com" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    // ── GET /api/bookmarks — filter params ─────────────────────────────────
+
+    [Fact]
+    public async Task GetAll_WithTagQueryParam_ReturnsFilteredResults()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Is<BookmarkFilterRequest>(f => f.Tag == "react")).Returns([
+            new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://react.dev", Title = "React", Tags = ["react"], CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
+        ]);
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?tag=react");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<BookmarkResponse[]>();
+        items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAll_WithEmptyTagQueryParam_ReturnsAll()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Any<BookmarkFilterRequest>()).Returns([
+            new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", Tags = [], CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
+            new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://b.com", Title = "B", Tags = [], CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
+        ]);
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?tag=");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<BookmarkResponse[]>();
+        items.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetAll_WithStatusUnread_ReturnsFilteredResults()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Is<BookmarkFilterRequest>(f => f.Status == "unread")).Returns([
+            new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", Tags = [], IsRead = false, CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
+        ]);
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?status=unread");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<BookmarkResponse[]>();
+        items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAll_WithInvalidStatus_Returns400()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Any<BookmarkFilterRequest>())
+            .ThrowsAsync(new ArgumentException("Invalid status value 'badvalue'. Accepted values: read, unread, all.", "Status"));
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?status=badvalue");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetAll_WithKeywordQueryParam_ReturnsFilteredResults()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Is<BookmarkFilterRequest>(f => f.Keyword == "hook")).Returns([
+            new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://a.com", Title = "React Hooks Guide", Tags = [], CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
+        ]);
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?q=hook");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<BookmarkResponse[]>();
+        items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAll_WithWhitespaceKeyword_ReturnsAll()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Any<BookmarkFilterRequest>()).Returns([
+            new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", Tags = [], CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
+        ]);
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?q=%20%20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<BookmarkResponse[]>();
+        items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAll_WithTagAndStatusAndKeyword_ReturnsIntersection()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Is<BookmarkFilterRequest>(f => f.Tag == "react" && f.Status == "unread" && f.Keyword == "hooks")).Returns([
+            new BookmarkResponse { Id = Guid.NewGuid(), Url = "https://a.com", Title = "React Hooks Guide", Tags = ["react"], IsRead = false, CreatedAt = DateTime.UtcNow, LastModifiedAt = DateTime.UtcNow },
+        ]);
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?tag=react&status=unread&q=hooks");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<BookmarkResponse[]>();
+        items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAll_WithCombinedFilters_NoMatches_Returns200EmptyArray()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetAllAsync(Arg.Any<BookmarkFilterRequest>()).Returns([]);
+
+        var client = CreateClientWithService(service);
+
+        var response = await client.GetAsync("/api/bookmarks?tag=react&status=unread&q=typescript");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<BookmarkResponse[]>();
+        items.Should().BeEmpty();
     }
 
     // ── DELETE /api/bookmarks/{id} ──────────────────────────────────────────

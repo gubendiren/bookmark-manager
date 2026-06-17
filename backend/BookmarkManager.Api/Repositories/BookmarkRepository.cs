@@ -43,4 +43,23 @@ public class BookmarkRepository(BookmarkDbContext db) : IBookmarkRepository
     public async Task<Bookmark?> GetByNormalizedUrlAsync(string normalizedUrl) =>
         await db.Bookmarks.FirstOrDefaultAsync(b =>
             b.Url.ToLower().Trim() == normalizedUrl);
+
+    public async Task<IEnumerable<Bookmark>> GetFilteredAsync(string? tag, bool? isRead, string? keyword)
+    {
+        var bookmarks = await db.Bookmarks.OrderBy(b => b.CreatedAt).ToListAsync();
+        IEnumerable<Bookmark> result = bookmarks;
+
+        if (tag is not null)
+            result = result.Where(b => b.Tags.Any(t => t.ToLowerInvariant() == tag));
+
+        if (isRead is not null)
+            result = result.Where(b => b.IsRead == isRead);
+
+        if (keyword is not null)
+            result = result.Where(b =>
+                b.Title.ToLowerInvariant().Contains(keyword) ||
+                (b.Notes != null && b.Notes.ToLowerInvariant().Contains(keyword)));
+
+        return result.ToList();
+    }
 }

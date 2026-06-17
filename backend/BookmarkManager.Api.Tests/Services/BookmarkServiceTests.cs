@@ -112,9 +112,9 @@ public class BookmarkServiceTests
             new() { Id = Guid.NewGuid(), Url = "https://b.com", Title = "B", Tags = [], CreatedAt = DateTime.UtcNow },
         };
 
-        _repo.GetAllAsync().Returns(bookmarks);
+        _repo.GetFilteredAsync(null, null, null).Returns(bookmarks);
 
-        var result = await _sut.GetAllAsync();
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest());
 
         result.Should().HaveCount(2);
     }
@@ -251,6 +251,237 @@ public class BookmarkServiceTests
         var act = () => _sut.UpdateAsync(Guid.NewGuid(), new UpdateBookmarkRequest());
 
         await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    // ── GetAllAsync filter — tag ────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAllAsync_WithTagFilter_ReturnsOnlyMatchingBookmarks()
+    {
+        var reactBookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://react.dev", Title = "React", Tags = ["react"], CreatedAt = DateTime.UtcNow };
+        var tsBookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://ts.dev", Title = "TS", Tags = ["typescript"], CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync("react", null, null).Returns([reactBookmark]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Tag = "react" });
+
+        result.Should().HaveCount(1);
+        result.Single().Title.Should().Be("React");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithTagFilterCaseInsensitive_ReturnsMatch()
+    {
+        var reactBookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://react.dev", Title = "React", Tags = ["react"], CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync("react", null, null).Returns([reactBookmark]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Tag = "REACT" });
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithEmptyTagFilter_ReturnsAll()
+    {
+        var bookmarks = new List<Bookmark>
+        {
+            new() { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", Tags = ["a"], CreatedAt = DateTime.UtcNow },
+            new() { Id = Guid.NewGuid(), Url = "https://b.com", Title = "B", Tags = ["b"], CreatedAt = DateTime.UtcNow },
+        };
+
+        _repo.GetFilteredAsync(null, null, null).Returns(bookmarks);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Tag = "" });
+
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithTagFilter_NoMatches_ReturnsEmptyList()
+    {
+        _repo.GetFilteredAsync("python", null, null).Returns([]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Tag = "python" });
+
+        result.Should().BeEmpty();
+    }
+
+    // ── GetAllAsync filter — read status ────────────────────────────────────
+
+    [Fact]
+    public async Task GetAllAsync_WithStatusUnread_ReturnsOnlyUnread()
+    {
+        var unread = new Bookmark { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", IsRead = false, Tags = [], CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync(null, false, null).Returns([unread]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Status = "unread" });
+
+        result.Should().HaveCount(1);
+        result.Single().IsRead.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithStatusRead_ReturnsOnlyRead()
+    {
+        var read = new Bookmark { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", IsRead = true, Tags = [], CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync(null, true, null).Returns([read]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Status = "read" });
+
+        result.Should().HaveCount(1);
+        result.Single().IsRead.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithStatusAll_ReturnsAll()
+    {
+        var bookmarks = new List<Bookmark>
+        {
+            new() { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", IsRead = true, Tags = [], CreatedAt = DateTime.UtcNow },
+            new() { Id = Guid.NewGuid(), Url = "https://b.com", Title = "B", IsRead = false, Tags = [], CreatedAt = DateTime.UtcNow },
+        };
+
+        _repo.GetFilteredAsync(null, null, null).Returns(bookmarks);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Status = "all" });
+
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithStatusOmitted_ReturnsAll()
+    {
+        var bookmarks = new List<Bookmark>
+        {
+            new() { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", Tags = [], CreatedAt = DateTime.UtcNow },
+        };
+
+        _repo.GetFilteredAsync(null, null, null).Returns(bookmarks);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest());
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithInvalidStatus_ThrowsArgumentException()
+    {
+        var act = () => _sut.GetAllAsync(new BookmarkFilterRequest { Status = "badvalue" });
+
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*badvalue*");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithStatusUnread_NoMatches_ReturnsEmptyList()
+    {
+        _repo.GetFilteredAsync(null, false, null).Returns([]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Status = "unread" });
+
+        result.Should().BeEmpty();
+    }
+
+    // ── GetAllAsync filter — keyword ────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAllAsync_WithKeyword_MatchesTitle()
+    {
+        var bookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://a.com", Title = "React Hooks Guide", Tags = [], CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync(null, null, "hook").Returns([bookmark]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Keyword = "hook" });
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithKeyword_MatchesNotes()
+    {
+        var bookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://a.com", Title = "TS Handbook", Notes = "Good reference for generics.", Tags = [], CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync(null, null, "generics").Returns([bookmark]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Keyword = "generics" });
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithKeyword_CaseInsensitiveMatch()
+    {
+        var bookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://a.com", Title = "React Hooks Guide", Tags = [], CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync(null, null, "hook").Returns([bookmark]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Keyword = "HOOK" });
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithWhitespaceKeyword_ReturnsAll()
+    {
+        var bookmarks = new List<Bookmark>
+        {
+            new() { Id = Guid.NewGuid(), Url = "https://a.com", Title = "A", Tags = [], CreatedAt = DateTime.UtcNow },
+        };
+
+        _repo.GetFilteredAsync(null, null, null).Returns(bookmarks);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Keyword = "   " });
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithKeyword_NoMatches_ReturnsEmptyList()
+    {
+        _repo.GetFilteredAsync(null, null, "xyzzy").Returns([]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Keyword = "xyzzy" });
+
+        result.Should().BeEmpty();
+    }
+
+    // ── GetAllAsync filter — combined ───────────────────────────────────────
+
+    [Fact]
+    public async Task GetAllAsync_WithTagAndStatus_ReturnsIntersection()
+    {
+        var bookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://a.com", Title = "React Hooks", Tags = ["react"], IsRead = false, CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync("react", false, null).Returns([bookmark]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Tag = "react", Status = "unread" });
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithAllThreeFilters_ReturnsIntersection()
+    {
+        var bookmark = new Bookmark { Id = Guid.NewGuid(), Url = "https://a.com", Title = "React Hooks Guide", Tags = ["react"], IsRead = false, CreatedAt = DateTime.UtcNow };
+
+        _repo.GetFilteredAsync("react", false, "hooks").Returns([bookmark]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Tag = "react", Status = "unread", Keyword = "hooks" });
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithAllThreeFilters_NoMatches_ReturnsEmptyList()
+    {
+        _repo.GetFilteredAsync("react", false, "typescript").Returns([]);
+
+        var result = await _sut.GetAllAsync(new BookmarkFilterRequest { Tag = "react", Status = "unread", Keyword = "typescript" });
+
+        result.Should().BeEmpty();
     }
 
     // ── DeleteAsync ─────────────────────────────────────────────────────────
