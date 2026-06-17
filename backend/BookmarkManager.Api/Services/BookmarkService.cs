@@ -96,6 +96,9 @@ public partial class BookmarkService(IBookmarkRepository repository) : IBookmark
             throw new NotFoundException($"Bookmark '{id}' was not found.");
     }
 
+    public async Task<BookmarkSummaryResponse> GetSummaryAsync() =>
+        await repository.GetSummaryAsync();
+
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private static string Normalize(string url) => url.Trim().ToLowerInvariant();

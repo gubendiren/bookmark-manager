@@ -9,4 +9,5 @@ public interface IBookmarkService
     Task<BookmarkResponse> GetByIdAsync(Guid id);
     Task<BookmarkResponse> UpdateAsync(Guid id, UpdateBookmarkRequest request);
     Task DeleteAsync(Guid id);
+    Task<BookmarkSummaryResponse> GetSummaryAsync();
 }

@@ -39,3 +39,8 @@ export async function deleteBookmark(id) {
   const res = await fetch(`/api/bookmarks/${id}`, { method: 'DELETE' })
   return handleResponse(res)
 }
+
+export async function getSummary() {
+  const res = await fetch('/api/bookmarks/summary')
+  return handleResponse(res)
+}

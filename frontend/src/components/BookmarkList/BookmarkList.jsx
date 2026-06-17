@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getAll } from '../../services/bookmarkService'
 import BookmarkCard from '../BookmarkCard/BookmarkCard'
 
-export default function BookmarkList({ refresh }) {
+export default function BookmarkList({ refresh, onUpdated, onDeleted }) {
   const [bookmarks, setBookmarks] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -15,10 +15,12 @@ export default function BookmarkList({ refresh }) {
 
   function handleUpdated(updated) {
     setBookmarks(bs => bs.map(b => b.id === updated.id ? updated : b))
+    onUpdated?.()
   }
 
   function handleDeleted(id) {
     setBookmarks(bs => bs.filter(b => b.id !== id))
+    onDeleted?.()
   }
 
   if (loading) return <p>Loading...</p>

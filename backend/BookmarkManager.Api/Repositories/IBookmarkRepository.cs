@@ -1,3 +1,4 @@
+using BookmarkManager.Api.DTOs;
 using BookmarkManager.Api.Models;
 
 namespace BookmarkManager.Api.Repositories;
@@ -11,4 +12,5 @@ public interface IBookmarkRepository
     Task<bool> DeleteAsync(Guid id);
     Task<bool> ExistsByNormalizedUrlAsync(string normalizedUrl);
     Task<Bookmark?> GetByNormalizedUrlAsync(string normalizedUrl);
+    Task<BookmarkSummaryResponse> GetSummaryAsync();
 }
