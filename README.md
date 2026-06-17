@@ -198,10 +198,12 @@ git push
 
 Each feature gets its own Git branch and its own folder under `specs/`. The Spec Kit creates both automatically when you run `/speckit.specify`.
 
-Start with Bookmark Management. In Claude Code, run:
+Start with Bookmark Management. Tagging is included here rather than as a separate feature — tags are a property of a bookmark, not a standalone capability, and they belong in the same specify/plan/implement cycle as the core CRUD operations.
+
+In Claude Code, run:
 
 ```
-/speckit.specify Build the core bookmark management feature. A user can create a bookmark with a URL, title, tags, notes, and a read or unread status. A user can update any of these fields. A user can delete a bookmark. The system must prevent saving a duplicate URL and must return a clear error when a duplicate is attempted.
+/speckit.specify Build the core bookmark management feature. A user can create a bookmark with a URL, title, tags, notes, and a read or unread status. A user can update any of these fields. A user can delete a bookmark. The system must prevent saving a duplicate URL and must return a clear error when a duplicate is attempted. Tags are short text labels attached to a bookmark. A bookmark can have zero or more tags. Tags must be trimmed of leading and trailing whitespace before saving. Tags are case-insensitive for filtering purposes.
 ```
 
 Spec Kit creates a new branch (`001-bookmark-management`) and writes the specification to `specs/001-bookmark-management/spec.md`.
@@ -224,7 +226,7 @@ git push
 > ```
 > Committing it means any teammate who pulls your branch immediately has the correct feature context. Without it, Spec Kit does not know which `specs/` folder to read and subsequent phase commands will fail or prompt unexpectedly. `feature.json` only changes when a new feature is specified, so subsequent phase commits (clarify, plan, tasks) only need `git add specs/`.
 
-### Specifying Features 2, 3, and 4
+### Specifying Features 2 and 3
 
 Each feature follows the same pattern: return to `main`, then run `/speckit.specify` and Spec Kit creates the next numbered branch and folder automatically.
 
@@ -242,11 +244,9 @@ git commit -m "SDD: Specify [feature name]"
 git push
 ```
 
-**Feature 2 — Tagging:** Tags are short text labels. A bookmark can have zero or more tags. Tags must be trimmed of whitespace before saving. Tags are case-insensitive for filtering.
+**Feature 2 — Filtering and Search** (`specs/002-filtering-and-search`): A user can filter bookmarks by tag, by read status, or by a text search across title and notes. Filters can be combined. No results returns an empty list, not an error.
 
-**Feature 3 — Filtering and Search:** A user can filter by tag, read status, or text search across title and notes. Filters can be combined. No results returns an empty list, not an error.
-
-**Feature 4 — Summary Dashboard:** Shows total bookmarks, total unread, and a breakdown by tag. Reflects current data without a page reload.
+**Feature 3 — Summary Dashboard** (`specs/003-summary-dashboard`): Shows total bookmarks, total unread, and a breakdown by tag. Reflects current data without a page reload.
 
 > **Note:** Spec Kit detects the active feature from your current Git branch. Always confirm you are on the correct branch before running any phase command.
 
@@ -413,7 +413,7 @@ Before specifying, update the existing specs where needed — the dashboard spec
 
 Then work through the phases in order:
 
-1. **Step 5** — `/speckit.specify` (Spec Kit creates `specs/002-favourites/` on a new branch)
+1. **Step 5** — `/speckit.specify` (Spec Kit creates `specs/004-favourites/` on a new branch)
 2. **Step 6** — `/speckit.clarify`
 3. **Step 7** — `/speckit.checklist`
 4. **Step 8** — `/speckit.plan`
@@ -432,9 +432,9 @@ By the end you should have:
 
 - `CLAUDE.md` at the repository root, reviewed and customised
 - `.specify/memory/constitution.md` accurately describing the system's architecture and constraints
-- `specs/001-bookmark-management/` and `specs/002-favourites/` each containing `spec.md`, `plan.md`, and `tasks.md`
+- `specs/001-bookmark-management/`, `specs/002-filtering-and-search/`, `specs/003-summary-dashboard/`, and `specs/004-favourites/` each containing `spec.md`, `plan.md`, and `tasks.md`
 - A `.gitignore` excluding build artefacts but keeping all SDD artifacts committed
-- A Git history showing one commit per SDD phase across both features
+- A Git history showing one commit per SDD phase across all four features
 - A working Personal Bookmark Manager application
 - All spec artifacts versioned alongside the code
 
