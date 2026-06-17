@@ -15,10 +15,12 @@ export default function BookmarkList({ refresh, filter }) {
 
   function handleUpdated(updated) {
     setBookmarks(bs => bs.map(b => b.id === updated.id ? updated : b))
+    onUpdated?.()
   }
 
   function handleDeleted(id) {
     setBookmarks(bs => bs.filter(b => b.id !== id))
+    onDeleted?.()
   }
 
   if (loading) return <p>Loading...</p>

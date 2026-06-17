@@ -505,4 +505,40 @@ public class BookmarkServiceTests
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
+
+    // ── GetSummaryAsync ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetSummaryAsync_EmptyCollection_ReturnsZeroCounts()
+    {
+        var summary = new BookmarkSummaryResponse { Total = 0, Unread = 0, Tags = [], UntaggedCount = 0 };
+        _repo.GetSummaryAsync().Returns(summary);
+
+        var result = await _sut.GetSummaryAsync();
+
+        result.Total.Should().Be(0);
+        result.Unread.Should().Be(0);
+        result.Tags.Should().BeEmpty();
+        result.UntaggedCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetSummaryAsync_WithBookmarks_DelegatesAndReturnsSummary()
+    {
+        var tags = new List<TagCount>
+        {
+            new() { Tag = "react", Count = 2 },
+            new() { Tag = "typescript", Count = 1 },
+        };
+        var summary = new BookmarkSummaryResponse { Total = 4, Unread = 3, Tags = tags, UntaggedCount = 1 };
+        _repo.GetSummaryAsync().Returns(summary);
+
+        var result = await _sut.GetSummaryAsync();
+
+        result.Total.Should().Be(4);
+        result.Unread.Should().Be(3);
+        result.Tags.Should().HaveCount(2);
+        result.Tags.First().Tag.Should().Be("react");
+        result.UntaggedCount.Should().Be(1);
+    }
 }

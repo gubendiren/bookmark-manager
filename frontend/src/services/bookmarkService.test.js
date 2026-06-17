@@ -167,3 +167,21 @@ describe('bookmarkService.deleteBookmark', () => {
     )
   })
 })
+
+// ── getSummary ──────────────────────────────────────────────────────────────
+
+describe('bookmarkService.getSummary', () => {
+  it('sends GET to /api/bookmarks/summary and returns summary object', async () => {
+    const mockSummary = { total: 4, unread: 3, tags: [], untaggedCount: 1 }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockSummary,
+    }))
+
+    const result = await bookmarkService.getSummary()
+
+    expect(fetch).toHaveBeenCalledWith('/api/bookmarks/summary')
+    expect(result).toEqual(mockSummary)
+  })
+})

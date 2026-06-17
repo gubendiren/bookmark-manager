@@ -1,4 +1,5 @@
 using BookmarkManager.Api.Data;
+using BookmarkManager.Api.DTOs;
 using BookmarkManager.Api.Models;
 using Microsoft.EntityFrameworkCore;
 

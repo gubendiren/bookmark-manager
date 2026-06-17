@@ -346,4 +346,52 @@ public class BookmarksControllerTests : IClassFixture<WebApplicationFactory<Prog
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    // ── GET /api/bookmarks/summary ──────────────────────────────────────────
+
+    [Fact]
+    public async Task GetSummary_Returns200WithCorrectShape()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetSummaryAsync().Returns(new BookmarkSummaryResponse
+        {
+            Total = 10,
+            Unread = 4,
+            Tags = [new TagCount { Tag = "react", Count = 2 }, new TagCount { Tag = "hooks", Count = 1 }],
+            UntaggedCount = 1,
+        });
+
+        var client = CreateClientWithService(service);
+        var response = await client.GetAsync("/api/bookmarks/summary");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadFromJsonAsync<BookmarkSummaryResponse>();
+        content.Should().NotBeNull();
+        content!.Total.Should().Be(10);
+        content.Unread.Should().Be(4);
+        content.Tags.Should().HaveCount(2);
+        content.UntaggedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetSummary_EmptyCollection_Returns200WithZeroCounts()
+    {
+        var service = Substitute.For<IBookmarkService>();
+        service.GetSummaryAsync().Returns(new BookmarkSummaryResponse
+        {
+            Total = 0,
+            Unread = 0,
+            Tags = [],
+            UntaggedCount = 0,
+        });
+
+        var client = CreateClientWithService(service);
+        var response = await client.GetAsync("/api/bookmarks/summary");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadFromJsonAsync<BookmarkSummaryResponse>();
+        content!.Total.Should().Be(0);
+        content.Tags.Should().BeEmpty();
+        content.UntaggedCount.Should().Be(0);
+    }
 }

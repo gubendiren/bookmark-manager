@@ -35,6 +35,13 @@ public class BookmarksController(IBookmarkService service) : ControllerBase
         }
     }
 
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetSummary()
+    {
+        var result = await service.GetSummaryAsync();
+        return Ok(result);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] BookmarkFilterRequest filter)
     {

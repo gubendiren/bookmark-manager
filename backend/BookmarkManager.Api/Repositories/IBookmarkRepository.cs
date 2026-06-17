@@ -1,3 +1,4 @@
+using BookmarkManager.Api.DTOs;
 using BookmarkManager.Api.Models;
 
 namespace BookmarkManager.Api.Repositories;
