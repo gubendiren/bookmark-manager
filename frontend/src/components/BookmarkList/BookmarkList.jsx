@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getAll } from '../../services/bookmarkService'
 import BookmarkCard from '../BookmarkCard/BookmarkCard'
 
-export default function BookmarkList({ refresh, filter }) {
+export default function BookmarkList({ refresh, filter, onUpdated, onDeleted }) {
   const [bookmarks, setBookmarks] = useState([])
   const [loading, setLoading] = useState(true)
 

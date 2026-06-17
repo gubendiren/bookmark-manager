@@ -106,7 +106,7 @@
 **Purpose**: End-to-end validation and final quality pass.
 
 - [x] T021 Run quickstart.md smoke tests against running servers — all 7 curl assertions must produce expected values
-- [ ] T022 [P] Verify UI renders correctly for edge cases: all bookmarks deleted (all zeros + empty tag state), single bookmark with multiple tags (each tag count correct)
+- [x] T022 [P] Verify UI renders correctly for edge cases: all bookmarks deleted (all zeros + empty tag state), single bookmark with multiple tags (each tag count correct)
 
 ---
 
